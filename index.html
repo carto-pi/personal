@@ -1088,6 +1088,29 @@
     }
 
     /* ============================================================
+       PUBLICATIONS LOADING STATE
+    ============================================================ */
+    .pub-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3rem 1rem;
+      color: var(--color-muted);
+      font-size: 0.9rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pub-loading svg { animation: spin 1s linear infinite; }
+
+    .pub-error {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.875rem;
+      color: var(--color-muted);
+    }
+    .pub-error a { color: var(--color-accent); }
+
+    /* ============================================================
        LANGUAGE TOGGLE
     ============================================================ */
     .en-block { display: none !important; }
@@ -1397,15 +1420,15 @@
             <h3 data-tr="Akademik İstatistikler" data-en="Academic Statistics">Akademik İstatistikler</h3>
             <div class="stat-row">
               <span class="stat-label" data-tr="Yayın sayısı" data-en="Publications">Yayın sayısı</span>
-              <span class="stat-val">—</span>
+              <span class="stat-val" id="stat-pub-count">—</span>
             </div>
             <div class="stat-row">
               <span class="stat-label" data-tr="Atıf sayısı" data-en="Citations">Atıf sayısı</span>
-              <span class="stat-val">—</span>
+              <span class="stat-val" id="stat-citations">—</span>
             </div>
             <div class="stat-row">
               <span class="stat-label">h-index</span>
-              <span class="stat-val">—</span>
+              <span class="stat-val" id="stat-hindex">—</span>
             </div>
             <div class="stat-row">
               <span class="stat-label" data-tr="Proje sayısı" data-en="Projects">Proje sayısı</span>
@@ -2266,17 +2289,7 @@
       a.addEventListener('click', () => mobileMenu.classList.remove('open'));
     });
 
-    // --- Publication filter ---
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const filter = btn.dataset.filter;
-        document.querySelectorAll('#pub-list .pub-item').forEach(item => {
-          item.style.display = (filter === 'all' || item.dataset.type === filter) ? '' : 'none';
-        });
-      });
-    });
+    // Publication filter — attachPubFilter() tarafından yönetilir (aşağıda)
 
     // --- Students: Tab navigation ---
     document.querySelectorAll('.st-tab').forEach(tab => {
@@ -2346,6 +2359,125 @@
     }, { threshold: 0.08, rootMargin: '0px 0px -32px 0px' });
 
     document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    // --- Google Scholar: Dinamik yayın yükleme ---
+    function escHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderPubItem(pub, lang) {
+      const typeMap = {
+        journal:    { tr: 'Dergi',        en: 'Journal',      cls: 'tag-journal' },
+        conference: { tr: 'Konferans',     en: 'Conference',   cls: 'tag-conference' },
+        book:       { tr: 'Kitap Bölümü', en: 'Book Chapter', cls: 'tag-book' },
+      };
+      const t = typeMap[pub.type] || typeMap.journal;
+      const label = lang === 'en' ? t.en : t.tr;
+
+      const titleHtml = pub.url
+        ? `<a href="${escHtml(pub.url)}" target="_blank" rel="noopener">${escHtml(pub.title)}</a>`
+        : escHtml(pub.title);
+
+      const doiHtml = pub.doi
+        ? `<a href="https://doi.org/${escHtml(pub.doi)}" target="_blank" rel="noopener" class="doi-btn">DOI</a>`
+        : '';
+
+      const citHtml = pub.citations > 0
+        ? `<span class="pub-year">${pub.citations} atıf</span>`
+        : '';
+
+      const el = document.createElement('div');
+      el.className = 'pub-item';
+      el.dataset.type = pub.type || 'journal';
+      el.innerHTML = `
+        <div class="pub-authors">${escHtml(pub.authors)}</div>
+        <div class="pub-title">${titleHtml}</div>
+        <div class="pub-meta">
+          <span class="pub-journal">${escHtml(pub.venue)}</span>
+          <span class="pub-year">${escHtml(pub.year)}</span>
+          <span class="type-tag ${t.cls}" data-tr="${t.tr}" data-en="${t.en}">${label}</span>
+          ${citHtml}
+          ${doiHtml}
+        </div>`;
+      return el;
+    }
+
+    async function loadPublications() {
+      const list = document.getElementById('pub-list');
+
+      // Yükleniyor göstergesi
+      list.innerHTML = `
+        <div class="pub-loading">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg>
+          Yayınlar Google Scholar'dan yükleniyor…
+        </div>`;
+
+      try {
+        const res = await fetch('assets/data/publications.json');
+        if (!res.ok) throw new Error('JSON bulunamadı');
+        const data = await res.json();
+
+        // Sidebar istatistiklerini güncelle
+        if (data.meta) {
+          const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val !== undefined && val !== null) el.textContent = val;
+          };
+          set('stat-pub-count', data.publications?.length);
+          set('stat-citations',  data.meta.citations_total);
+          set('stat-hindex',     data.meta.h_index);
+        }
+
+        const pubs = data.publications || [];
+        if (pubs.length === 0) {
+          list.innerHTML = '<p class="pub-error">Yayın verisi bulunamadı.</p>';
+          return;
+        }
+
+        // Yayınları render et
+        const lang = document.getElementById('html-root').getAttribute('lang') || 'tr';
+        list.innerHTML = '';
+        pubs.forEach(pub => list.appendChild(renderPubItem(pub, lang)));
+
+        // Filtre listener'larını yeniden bağla
+        attachPubFilter();
+
+        // Aktif filtre durumunu koru
+        const activeFilter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+        if (activeFilter !== 'all') {
+          list.querySelectorAll('.pub-item').forEach(item => {
+            item.style.display = (item.dataset.type === activeFilter) ? '' : 'none';
+          });
+        }
+
+      } catch (e) {
+        list.innerHTML = `
+          <div class="pub-error">
+            Yayın verisi henüz oluşturulmadı.<br>
+            <a href="https://scholar.google.com.tr/citations?user=EWXdpogAAAAJ&hl=tr"
+               target="_blank" rel="noopener">Google Scholar profilini</a> ziyaret edebilirsiniz.
+          </div>`;
+      }
+    }
+
+    function attachPubFilter() {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const filter = btn.dataset.filter;
+          document.querySelectorAll('#pub-list .pub-item').forEach(item => {
+            item.style.display = (filter === 'all' || item.dataset.type === filter) ? '' : 'none';
+          });
+        };
+      });
+    }
+
+    loadPublications();
   </script>
 
 </body>
