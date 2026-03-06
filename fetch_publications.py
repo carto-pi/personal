@@ -26,12 +26,22 @@ SCHOLAR_ID = "EWXdpogAAAAJ"
 OUTPUT_PATH = Path("assets/data/publications.json")
 
 
+CONFERENCE_KEYWORDS = [
+    "proceedings", "conference", "congress", "symposium", "sempozyum",
+    "kurultay", "workshop", "intercontinental geoinformation", "isprs archives",
+    "geoext", "uzal-cbs", "harita bilimsel", "konferans",
+]
+
 def detect_type(bib: dict) -> str:
     """Yayın türünü bibliyografik veriden tespit eder."""
     if bib.get("journal"):
         return "journal"
-    booktitle = bib.get("booktitle", "").lower()
-    if bib.get("conference") or "proceedings" in booktitle or "konferans" in booktitle:
+    venue = " ".join([
+        bib.get("booktitle", ""),
+        bib.get("conference", ""),
+        bib.get("venue", ""),
+    ]).lower()
+    if any(kw in venue for kw in CONFERENCE_KEYWORDS):
         return "conference"
     if bib.get("booktitle"):
         return "book"
@@ -63,7 +73,7 @@ def fetch_publications():
     # Yazar profilini çek
     try:
         author = sc.search_author_id(SCHOLAR_ID)
-        sc.fill(author, sections=["basics", "counts", "publications"])
+        sc.fill(author, sections=["basics", "indices", "counts", "publications"])
     except Exception as e:
         print(f"Yazar profili çekilemedi: {e}")
         print("Google CAPTCHA engeli olabilir. Bir süre bekleyip tekrar deneyin.")
