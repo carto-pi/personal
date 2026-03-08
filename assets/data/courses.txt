@@ -29,23 +29,13 @@ ad: Coğrafi Bilgi Sistemleri
 tur: lisans
 donem: guz
 
-kod: HRT-401
-ad: Bilgisayar Destekli Harita Yapımı
-tur: lisans
-donem: guz
-
-kod: HRT-312
-ad: CBS'de Veri Modelleri
-tur: lisans
-donem: guz
-
-kod: HRT-101
-ad: Bilim Tarihi
+kod: HRT-412
+ad: CBS'de Mekansal Analizler
 tur: lisans
 donem: guz
 
 kod: HRT-501
-ad: Web Tabanlı Kartografya ve CBS
+ad: CBS'de Mekansal İstatistik
 tur: lisansustu
 donem: guz
 
@@ -54,16 +44,21 @@ donem: guz
 # =====================
 
 kod: HRT-313
-ad: Coğrafi Bilgi Sistemleri Uygulamaları
+ad: CBS Uygulamaları
 tur: lisans
 donem: bahar
 
-kod: HRT-221
-ad: Veri Tabanı Yönetimi
+kod: HRT-312
+ad: CBS'de Veri Modelleri
 tur: lisans
 donem: bahar
 
-kod: HRT-502
-ad: CBS'de Mekansal İstatistik
+kod: HRT-421
+ad: CBS'de Programlama
+tur: lisans
+donem: bahar
+
+kod: HRT-511
+ad: Web Tabanlı Kartografya ve CBS
 tur: lisansustu
 donem: bahar
