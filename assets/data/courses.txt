@@ -24,17 +24,17 @@
 # GÜZ DÖNEMİ
 # =====================
 
-kod: HRT-311
+kod: 5.Dönem
 ad: Coğrafi Bilgi Sistemleri
 tur: lisans
 donem: guz
 
-kod: HRT-412
+kod: 7.Dönem
 ad: CBS'de Mekansal Analizler
 tur: lisans
 donem: guz
 
-kod: HRT-501
+kod: 1.Dönem
 ad: CBS'de Mekansal İstatistik
 tur: lisansustu
 donem: guz
@@ -43,22 +43,22 @@ donem: guz
 # BAHAR DÖNEMİ
 # =====================
 
-kod: HRT-313
+kod: 6.Dönem
 ad: CBS Uygulamaları
 tur: lisans
 donem: bahar
 
-kod: HRT-312
+kod: 8.Dönem
 ad: CBS'de Veri Modelleri
 tur: lisans
 donem: bahar
 
-kod: HRT-421
+kod: 8.Dönem
 ad: CBS'de Programlama
 tur: lisans
 donem: bahar
 
-kod: HRT-511
+kod: 2.Dönem
 ad: Web Tabanlı Kartografya ve CBS
 tur: lisansustu
 donem: bahar
